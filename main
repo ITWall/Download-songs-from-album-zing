@@ -1,0 +1,44 @@
+import requests
+from bs4 import BeautifulSoup
+import json
+
+def get_link_detail_page_song(url):
+    source = requests.get(url)
+    plain_text = source.text
+    soup = BeautifulSoup(plain_text, 'html.parser')
+    all_url = soup.find_all('a', {'class': 'musictitle'})
+    for url in all_url:
+        if '/video/' in url.get('href') or 'remix' in url.get('href').lower():
+            continue
+        else:
+            break
+    return get_link_page_download(url.get('href'))
+
+def get_link_page_download(url):
+    source = requests.get(url)
+    plain_text = source.text
+    soup = BeautifulSoup(plain_text, 'html.parser')
+    url = soup.find_all('a', {'target': '_blank'})[0].get('href')
+    return get_link_download_song(url)
+
+def get_link_download_song(url):
+    source = requests.get(url)
+    plain_text = source.text
+    soup = BeautifulSoup(plain_text, 'html.parser')
+    all_link_download_song = soup.find_all('div', {'id': 'downloadlink2'})[0].find_all('b')[1].find_all('a')
+    url = all_link_download_song[len(all_link_download_song)-2].get('href')
+    print(url)
+    return url
+
+fr = open('data.json', 'r')
+data = fr.read()
+fr.close()
+array_links_song = json.loads(data)
+results = []
+
+for link in array_links_song:
+    results.append(get_link_detail_page_song(link))
+
+fw = open('result.json', 'w')
+fw.write(json.dumps(results))
+fw.close()
